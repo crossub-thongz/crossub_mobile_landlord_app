@@ -1,0 +1,24 @@
+{
+  "name": "crossub-mobile-landlord",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CROSSUB landlord app — visibility, approvals, and financial transparency for property owners.",
+  "scripts": {
+    "preinstall": "npx -y only-allow pnpm",
+    "dev": "bash scripts/dev-clean.sh",
+    "dev:raw": "pnpm -r --parallel run dev",
+    "dev:landlord": "pnpm --filter @crossub/landlord dev",
+    "build": "pnpm -r run build",
+    "build:landlord": "pnpm --filter @crossub/landlord build",
+    "start": "pnpm -r --parallel run start",
+    "start:landlord": "pnpm --filter @crossub/landlord start",
+    "lint": "pnpm -r run lint"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9",
+    "npm": "please-use-pnpm",
+    "yarn": "please-use-pnpm"
+  }
+}
