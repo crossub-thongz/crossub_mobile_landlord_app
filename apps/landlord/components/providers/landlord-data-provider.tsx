@@ -10,6 +10,14 @@ import {
 } from 'react';
 
 import { useAuth } from '@/components/providers/auth-provider';
+import {
+  fetchInspections,
+  fetchMaintenance,
+} from '@/lib/crossub-api/landlord-client';
+import {
+  mapLandlordInspections,
+  mapLandlordMaintenance,
+} from '@/lib/crossub-api/landlord-mappers';
 import { api, ApiError } from '@/lib/api';
 import {
   APPROVALS,
@@ -86,9 +94,14 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
   const [messages, setMessages] = useState(MESSAGE_THREADS);
   const [threadMessages, setThreadMessages] = useState(THREAD_MESSAGES);
 
+  // Wired to the live landlord facade (replaced on a successful fetch, demo seed on error).
+  const [inspections, setInspections] = useState(INSPECTIONS);
+  const [maintenance, setMaintenance] = useState(MAINTENANCE);
+
+  // Still demo-only: properties + statements facades are thinner than these screens
+  // (property has no rent/manager/agency/lease; a statement is one disbursement line, not
+  // a monthly P&L) — deferred until those facades are enriched. The rest have no facade.
   const properties = PROPERTIES;
-  const inspections = INSPECTIONS;
-  const maintenance = MAINTENANCE;
   const payments = PAYMENTS;
   const outstanding = OUTSTANDING;
   const statements = STATEMENTS;
@@ -116,9 +129,22 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
       } else {
         setApiError('API unavailable — using demo data');
       }
-    } finally {
-      setLoading(false);
     }
+    // Load the live facade domains the screens map cleanly — each independently, so a
+    // failure in one leaves just that slice on demo data (the portfolio never blanks).
+    const [maint, insp] = await Promise.allSettled([
+      fetchMaintenance(),
+      fetchInspections(),
+    ]);
+    if (maint.status === 'fulfilled') {
+      setMaintenance(mapLandlordMaintenance(maint.value));
+      setApiConnected(true);
+    }
+    if (insp.status === 'fulfilled') {
+      setInspections(mapLandlordInspections(insp.value));
+      setApiConnected(true);
+    }
+    setLoading(false);
   }, [status]);
 
   useEffect(() => {
