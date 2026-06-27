@@ -5,32 +5,37 @@
  * about where their data came from — the provider swaps demo seeds for these mapped
  * results with no component changes.
  *
- * Covers the two facade domains that map faithfully onto their screens:
- *   - `/landlord/maintenance`  -> MaintenanceJob
- *   - `/landlord/inspections`  -> InspectionRecord
- * (`/landlord/properties` and `/landlord/statements` are deferred — their DTOs are
- * structurally thinner than the property card / monthly-P&L screens; see the data
- * provider + CHANGELOG.)
+ * Covers the four facade domains that map faithfully onto their screens:
+ *   - `/landlord/maintenance`        -> MaintenanceJob
+ *   - `/landlord/inspections`        -> InspectionRecord
+ *   - `/landlord/properties`         -> LandlordProperty (enriched: rent/lease/contacts/manager)
+ *   - `/landlord/statements/monthly` -> MonthlyStatement (authoritative monthly P&L)
  *
- * Both DTOs are THIN projections of the real Prisma rows, so view-model fields the
- * facade does not carry (contractor, costs, inspector, comments) land on safe defaults —
- * the same shape the screens already tolerate for demo data.
+ * The maintenance/inspection DTOs are THIN projections of the real Prisma rows, so
+ * view-model fields the facade does not carry (contractor, costs, inspector, comments)
+ * land on safe defaults — the same shape the screens already tolerate for demo data.
  */
 import {
   INSPECTION_STATUS,
   INSPECTION_TYPE,
+  LEASE_STATUS,
   MAINTENANCE_STATUS,
 } from '@/constants/api-enums';
 import type {
   InspectionRecord,
   InspectionType,
+  LandlordProperty,
   MaintenanceJob,
   MaintenanceStatus,
+  MonthlyStatement,
+  PropertyStatus,
 } from '@/lib/types';
 
 import type {
   LandlordInspection as LandlordInspectionDto,
   LandlordMaintenance as LandlordMaintenanceDto,
+  LandlordMonthlyStatement as LandlordMonthlyStatementDto,
+  LandlordPropertyDto,
 } from './landlord-client';
 
 /**
@@ -128,4 +133,149 @@ export function mapLandlordInspections(
   dtos: LandlordInspectionDto[],
 ): InspectionRecord[] {
   return dtos.map(toInspectionRecord);
+}
+
+// --------------------------------------------------------------------------
+// Properties
+// --------------------------------------------------------------------------
+
+/** API leaseStatus badge -> the app's PropertyStatus view-model ('active' -> 'occupied'). */
+const PROPERTY_STATUS_VIEW: Record<
+  LandlordPropertyDto['leaseStatus'],
+  PropertyStatus
+> = {
+  [LEASE_STATUS.ACTIVE]: 'occupied',
+  [LEASE_STATUS.PERIODIC]: 'periodic',
+  [LEASE_STATUS.VACATING]: 'vacating',
+  [LEASE_STATUS.VACANT]: 'vacant',
+};
+
+/**
+ * Map one enriched property (full facade DTO) onto the app's LandlordProperty card.
+ * Lease/rent/contacts pass straight through; the leaseStatus badge maps onto the
+ * view-model PropertyStatus; the managing-agency + property-manager contacts fall back
+ * to '' / '—' when unassigned. The DTO now types every nullable as `T | null`, so a
+ * plain `??` lands the right default (no `asString` guard needed here).
+ */
+export function toLandlordPropertyCard(dto: LandlordPropertyDto): LandlordProperty {
+  return {
+    id: dto.id,
+    address: dto.address,
+    suburb: dto.suburb ?? '',
+    // The detail screen hides tenant info when tenantName === 'Vacant'.
+    tenantName: dto.tenantName ?? 'Vacant',
+    rentWeekly: dto.rentWeekly ?? 0,
+    status: PROPERTY_STATUS_VIEW[dto.leaseStatus] ?? 'vacant',
+    needAction: false,
+    bedrooms: dto.bedrooms ?? 0,
+    bathrooms: dto.bathrooms ?? 0,
+    parkingSpaces: dto.parking ?? 0,
+    leaseStart: dto.leaseStart ?? undefined,
+    leaseEnd: dto.leaseEnd ?? undefined,
+    agencyName: dto.agencyName ?? '',
+    propertyManager: dto.propertyManager ?? '—',
+    managerEmail: dto.managerEmail ?? '',
+    managerPhone: dto.managerPhone ?? '',
+  };
+}
+
+export function mapLandlordProperties(
+  dtos: LandlordPropertyDto[],
+): LandlordProperty[] {
+  return dtos.map(toLandlordPropertyCard);
+}
+
+// --------------------------------------------------------------------------
+// Monthly statements
+// --------------------------------------------------------------------------
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+const MONTH_TOKENS = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+] as const;
+
+/** 'jun-2026' -> 'June 2026' (falls back to the raw token if it doesn't parse). */
+function humanizeMonth(token: string): string {
+  const [mon, year] = token.split('-');
+  const idx = MONTH_TOKENS.indexOf(mon as (typeof MONTH_TOKENS)[number]);
+  if (idx < 0 || !year) return token;
+  return `${MONTH_NAMES[idx]} ${year}`;
+}
+
+/** Round to whole cents so the balancing plug never carries float drift (e.g. −0). */
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Map one authoritative monthly settlement onto the app's MonthlyStatement P&L card.
+ * The server figures (rent received, fee split, net to landlord) are taken as-is;
+ * `otherExpenses` is a balancing plug so the screen's six lines sum exactly to the
+ * authoritative net (net = rentReceived − approvedInvoices − agentFee − crossubFee, so
+ * with management = agentFee + crossubFee and maintenance = approvedInvoices the plug
+ * is 0 when the row reconciles). Inspection/utility buckets aren't carried by the
+ * settlement header, so they land on 0.
+ */
+export function toMonthlyStatement(
+  dto: LandlordMonthlyStatementDto,
+): MonthlyStatement {
+  const rentalIncome = dto.rentReceived;
+  const managementFees = round2(dto.agentFee + dto.crossubFee);
+  const maintenanceCosts = dto.approvedInvoices;
+  const inspectionCosts = 0;
+  const utilityExpenses = 0;
+  const netAmount = dto.netToLandlord;
+  const otherExpenses = round2(
+    rentalIncome -
+      managementFees -
+      maintenanceCosts -
+      inspectionCosts -
+      utilityExpenses -
+      netAmount,
+  );
+  return {
+    id: dto.id,
+    propertyId: dto.propertyId,
+    propertyAddress: dto.propertyAddress,
+    period: humanizeMonth(dto.month),
+    rentalIncome,
+    managementFees,
+    maintenanceCosts,
+    inspectionCosts,
+    utilityExpenses,
+    otherExpenses,
+    netAmount,
+    availableAt: dto.issuedAt,
+  };
+}
+
+export function mapLandlordStatements(
+  dtos: LandlordMonthlyStatementDto[],
+): MonthlyStatement[] {
+  return dtos.map(toMonthlyStatement);
 }

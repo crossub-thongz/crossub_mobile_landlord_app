@@ -38,3 +38,24 @@ export const INSPECTION_STATUS = {
   PUBLISHED: 'PUBLISHED',
   CANCELLED: 'CANCELLED',
 } as const;
+
+/** PropertyStatus — the real persisted state of a property. */
+export const PROPERTY_STATUS = {
+  OCCUPIED: 'OCCUPIED',
+  VACANT: 'VACANT',
+  SHOWING: 'SHOWING',
+  MAINTENANCE: 'MAINTENANCE',
+} as const;
+
+/**
+ * LeaseStatus — the server-derived lease-standing badge the property card carries
+ * (`LandlordPropertyResponseDto.leaseStatus`). These are the wire values the contract
+ * emits; the property mapper maps them onto the app's PropertyStatus view-model
+ * (notably `'active' → 'occupied'`).
+ */
+export const LEASE_STATUS = {
+  ACTIVE: 'active',
+  PERIODIC: 'periodic',
+  VACATING: 'vacating',
+  VACANT: 'vacant',
+} as const;

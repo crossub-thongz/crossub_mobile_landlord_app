@@ -2,20 +2,24 @@ import type { components } from '@crossub-thongz/api-contract';
 
 import { crossub } from './client';
 
-export type LandlordProperty = components['schemas']['LandlordPropertyResponseDto'];
+// Aliased `...Dto` so it never collides with the `LandlordProperty` view-model
+// (lib/types.ts) the mappers translate these into.
+export type LandlordPropertyDto = components['schemas']['LandlordPropertyResponseDto'];
 export type LandlordMaintenance = components['schemas']['LandlordMaintenanceResponseDto'];
 export type LandlordInspection = components['schemas']['LandlordInspectionResponseDto'];
 export type LandlordStatement = components['schemas']['LandlordStatementResponseDto'];
+export type LandlordMonthlyStatement =
+  components['schemas']['LandlordMonthlyStatementResponseDto'];
 
 /** Owned properties (`GET /api/v1/landlord/properties`). */
-export async function fetchProperties(): Promise<LandlordProperty[]> {
+export async function fetchProperties(): Promise<LandlordPropertyDto[]> {
   const { data, error } = await crossub.GET('/landlord/properties');
   if (error || !data) throw new Error('Failed to load properties');
   return data.items;
 }
 
 /** One owned property by id (`GET /api/v1/landlord/properties/{propertyId}`). */
-export async function fetchProperty(propertyId: string): Promise<LandlordProperty> {
+export async function fetchProperty(propertyId: string): Promise<LandlordPropertyDto> {
   const { data, error } = await crossub.GET('/landlord/properties/{propertyId}', {
     params: { path: { propertyId } },
   });
@@ -42,4 +46,12 @@ export async function fetchStatements(): Promise<LandlordStatement[]> {
   const { data, error } = await crossub.GET('/landlord/statements');
   if (error || !data) throw new Error('Failed to load statements');
   return data.items;
+}
+
+/** Monthly owner statements / P&L (`GET /api/v1/landlord/statements/monthly`). */
+export async function fetchMonthlyStatements(): Promise<LandlordMonthlyStatement[]> {
+  const { data, error } = await crossub.GET('/landlord/statements/monthly');
+  if (error || !data) throw new Error('Failed to load monthly statements');
+  // This endpoint returns a bare array (not a paginated envelope).
+  return data;
 }

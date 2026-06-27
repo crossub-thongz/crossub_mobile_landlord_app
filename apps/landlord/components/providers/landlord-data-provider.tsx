@@ -13,10 +13,14 @@ import { useAuth } from '@/components/providers/auth-provider';
 import {
   fetchInspections,
   fetchMaintenance,
+  fetchMonthlyStatements,
+  fetchProperties,
 } from '@/lib/crossub-api/landlord-client';
 import {
   mapLandlordInspections,
   mapLandlordMaintenance,
+  mapLandlordProperties,
+  mapLandlordStatements,
 } from '@/lib/crossub-api/landlord-mappers';
 import { api, ApiError } from '@/lib/api';
 import {
@@ -97,14 +101,13 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
   // Wired to the live landlord facade (replaced on a successful fetch, demo seed on error).
   const [inspections, setInspections] = useState(INSPECTIONS);
   const [maintenance, setMaintenance] = useState(MAINTENANCE);
+  const [properties, setProperties] = useState(PROPERTIES);
+  const [statements, setStatements] = useState(STATEMENTS);
 
-  // Still demo-only: properties + statements facades are thinner than these screens
-  // (property has no rent/manager/agency/lease; a statement is one disbursement line, not
-  // a monthly P&L) — deferred until those facades are enriched. The rest have no facade.
-  const properties = PROPERTIES;
+  // Still demo-only — no faithful facade yet (payments/outstanding/documents/approvals/
+  // messages/notifications).
   const payments = PAYMENTS;
   const outstanding = OUTSTANDING;
-  const statements = STATEMENTS;
   const documents = DOCUMENTS;
 
   const portfolio = useMemo(
@@ -132,9 +135,11 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     }
     // Load the live facade domains the screens map cleanly — each independently, so a
     // failure in one leaves just that slice on demo data (the portfolio never blanks).
-    const [maint, insp] = await Promise.allSettled([
+    const [maint, insp, props, stmts] = await Promise.allSettled([
       fetchMaintenance(),
       fetchInspections(),
+      fetchProperties(),
+      fetchMonthlyStatements(),
     ]);
     if (maint.status === 'fulfilled') {
       setMaintenance(mapLandlordMaintenance(maint.value));
@@ -142,6 +147,14 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     }
     if (insp.status === 'fulfilled') {
       setInspections(mapLandlordInspections(insp.value));
+      setApiConnected(true);
+    }
+    if (props.status === 'fulfilled') {
+      setProperties(mapLandlordProperties(props.value));
+      setApiConnected(true);
+    }
+    if (stmts.status === 'fulfilled') {
+      setStatements(mapLandlordStatements(stmts.value));
       setApiConnected(true);
     }
     setLoading(false);
