@@ -38,14 +38,18 @@ export default function NewMessagePage() {
     }
     setSubmitting(true);
     try {
-      const threadId = createMessageThread({
+      const threadId = await createMessageThread({
         category,
         subject: subject.trim(),
         propertyId: propertyId || undefined,
         body: body.trim(),
       });
-      toast.success('Message sent');
-      router.push(messageDetail(threadId));
+      if (threadId) {
+        toast.success('Message sent');
+        router.push(messageDetail(threadId));
+      } else {
+        toast.error('Could not send your message. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

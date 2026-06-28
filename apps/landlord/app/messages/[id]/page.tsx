@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { LandlordShell } from '@/components/layout/landlord-shell';
 import { useLandlordData } from '@/components/providers/landlord-data-provider';
@@ -35,8 +36,12 @@ export default function MessageDetailPage({
     if (!reply.trim()) return;
     setSending(true);
     try {
-      sendMessage(id, reply.trim());
-      setReply('');
+      const ok = await sendMessage(id, reply.trim());
+      if (ok) {
+        setReply('');
+      } else {
+        toast.error('Could not send your reply. Please try again.');
+      }
     } finally {
       setSending(false);
     }

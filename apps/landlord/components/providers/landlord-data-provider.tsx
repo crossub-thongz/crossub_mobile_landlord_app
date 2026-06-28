@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from '@/components/providers/auth-provider';
 import {
+  createMessageThread as apiCreateMessageThread,
   decideApproval as apiDecideApproval,
   fetchApprovals,
   fetchDocuments,
@@ -24,10 +25,12 @@ import {
   fetchProperties,
   markAllNotificationsRead as apiMarkAllNotificationsRead,
   markNotificationRead as apiMarkNotificationRead,
+  replyToThread as apiReplyToThread,
 } from '@/lib/crossub-api/landlord-client';
 import {
   approvalDecisionToApi,
   buildThreadMessages,
+  CATEGORY_TO_DEPARTMENT,
   mapLandlordApprovals,
   mapLandlordDocuments,
   mapLandlordInspections,
@@ -38,21 +41,10 @@ import {
   mapLandlordProperties,
   mapLandlordStatements,
   mapLandlordThreads,
+  toMessageThread,
+  toThreadMessage,
 } from '@/lib/crossub-api/landlord-mappers';
 import { api, ApiError } from '@/lib/api';
-import {
-  APPROVALS,
-  DOCUMENTS,
-  INSPECTIONS,
-  MAINTENANCE,
-  MESSAGE_THREADS,
-  NOTIFICATIONS,
-  OUTSTANDING,
-  PAYMENTS,
-  PROPERTIES,
-  STATEMENTS,
-  THREAD_MESSAGES,
-} from '@/lib/mock-data';
 import { buildPortfolioSummary } from '@/lib/portfolio-summary';
 import type {
   ApprovalItem,
@@ -93,13 +85,13 @@ interface LandlordDataContextValue {
   resolveApproval: (id: string, status: ApprovalStatus, note?: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  sendMessage: (threadId: string, body: string) => void;
+  sendMessage: (threadId: string, body: string) => Promise<boolean>;
   createMessageThread: (input: {
     category: MessageCategory;
     subject: string;
     propertyId?: string;
     body: string;
-  }) => string;
+  }) => Promise<string | null>;
 }
 
 const LandlordDataContext = createContext<LandlordDataContextValue | null>(null);
@@ -110,26 +102,24 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
   const [apiConnected, setApiConnected] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const [approvals, setApprovals] = useState(APPROVALS);
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
-  const [messages, setMessages] = useState(MESSAGE_THREADS);
-  const [threadMessages, setThreadMessages] = useState(THREAD_MESSAGES);
-
-  // Wired to the live landlord facade (replaced on a successful fetch, demo seed on error).
-  const [inspections, setInspections] = useState(INSPECTIONS);
-  const [maintenance, setMaintenance] = useState(MAINTENANCE);
-  const [properties, setProperties] = useState(PROPERTIES);
-  const [statements, setStatements] = useState(STATEMENTS);
-  const [payments, setPayments] = useState(PAYMENTS);
-  const [outstanding, setOutstanding] = useState(OUTSTANDING);
-  const [documents, setDocuments] = useState(DOCUMENTS);
-
-  // Still demo-only — no faithful backend source (approvals + notifications are app-only
-  // concepts; see the mobile-facade backlog).
+  // All ten domains are served by the live landlord facade. State starts empty and is
+  // populated by `refresh()`; on an API failure a slice simply stays empty (the screens
+  // render their own empty states) — no mock/demo data is ever shown to a tester.
+  const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
+  const [notifications, setNotifications] = useState<LandlordNotification[]>([]);
+  const [messages, setMessages] = useState<MessageThread[]>([]);
+  const [threadMessages, setThreadMessages] = useState<Record<string, ThreadMessage[]>>({});
+  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
+  const [maintenance, setMaintenance] = useState<MaintenanceJob[]>([]);
+  const [properties, setProperties] = useState<LandlordProperty[]>([]);
+  const [statements, setStatements] = useState<MonthlyStatement[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [outstanding, setOutstanding] = useState<OutstandingAmount[]>([]);
+  const [documents, setDocuments] = useState<LandlordDocument[]>([]);
 
   const portfolio = useMemo(
-    () => buildPortfolioSummary(properties, approvals, maintenance),
-    [properties, approvals, maintenance],
+    () => buildPortfolioSummary(properties, approvals, maintenance, outstanding),
+    [properties, approvals, maintenance, outstanding],
   );
 
   const refresh = useCallback(async () => {
@@ -147,11 +137,11 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
       if (err instanceof ApiError) {
         setApiError(`API unavailable (${err.status})`);
       } else {
-        setApiError('API unavailable — using demo data');
+        setApiError('API unavailable');
       }
     }
-    // Load the live facade domains the screens map cleanly — each independently, so a
-    // failure in one leaves just that slice on demo data (the portfolio never blanks).
+    // Load every live facade domain independently, so a failure in one leaves just that
+    // slice empty (its screen shows an empty state) rather than blanking the whole app.
     const [maint, insp, props, stmts, pays, owed, docs, msgs, apprs, notifs] =
       await Promise.allSettled([
         fetchMaintenance(),
@@ -246,65 +236,70 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     [threadMessages],
   );
 
-  const sendMessage = useCallback((threadId: string, body: string) => {
-    const msg: ThreadMessage = {
-      id: `msg-${Date.now()}`,
-      from: 'You',
-      body,
-      at: new Date().toISOString(),
-    };
-    setThreadMessages((prev) => ({
-      ...prev,
-      [threadId]: [...(prev[threadId] ?? []), msg],
-    }));
-    setMessages((prev) =>
-      prev.map((t) =>
-        t.id === threadId
-          ? { ...t, lastMessage: body, lastAt: msg.at, unread: 0 }
-          : t,
-      ),
-    );
-  }, []);
+  const sendMessage = useCallback(
+    async (threadId: string, body: string): Promise<boolean> => {
+      // Optimistic append for instant feedback...
+      const optimistic: ThreadMessage = {
+        id: `tmp-${Date.now()}`,
+        from: 'You',
+        body,
+        at: new Date().toISOString(),
+      };
+      setThreadMessages((prev) => ({
+        ...prev,
+        [threadId]: [...(prev[threadId] ?? []), optimistic],
+      }));
+      try {
+        // ...then persist and reconcile with the server's canonical thread.
+        const dto = await apiReplyToThread(threadId, body);
+        setThreadMessages((prev) => ({
+          ...prev,
+          [dto.id]: dto.messages.map(toThreadMessage),
+        }));
+        setMessages((prev) =>
+          prev.map((t) => (t.id === dto.id ? toMessageThread(dto) : t)),
+        );
+        return true;
+      } catch {
+        // Roll the optimistic message back so the UI reflects the failed send.
+        setThreadMessages((prev) => ({
+          ...prev,
+          [threadId]: (prev[threadId] ?? []).filter((m) => m.id !== optimistic.id),
+        }));
+        return false;
+      }
+    },
+    [],
+  );
 
   const createMessageThread = useCallback(
-    (input: {
+    async (input: {
       category: MessageCategory;
       subject: string;
       propertyId?: string;
       body: string;
-    }) => {
-      const id = `msg-${Date.now()}`;
-      const property = input.propertyId
-        ? properties.find((p) => p.id === input.propertyId)
-        : undefined;
-      const thread: MessageThread = {
-        id,
-        propertyId: input.propertyId,
-        propertyAddress: property
-          ? `${property.address}, ${property.suburb}`
-          : undefined,
-        subject: input.subject,
-        category: input.category,
-        participants: ['CROSSUB Support'],
-        lastMessage: input.body,
-        lastAt: new Date().toISOString(),
-        unread: 0,
-      };
-      setMessages((prev) => [thread, ...prev]);
-      setThreadMessages((prev) => ({
-        ...prev,
-        [id]: [
-          {
-            id: `m-${Date.now()}`,
-            from: 'You',
-            body: input.body,
-            at: new Date().toISOString(),
-          },
-        ],
-      }));
-      return id;
+    }): Promise<string | null> => {
+      try {
+        const dto = await apiCreateMessageThread({
+          subject: input.subject,
+          body: input.body,
+          department: CATEGORY_TO_DEPARTMENT[input.category],
+          propertyId: input.propertyId,
+        });
+        setMessages((prev) => [
+          toMessageThread(dto),
+          ...prev.filter((t) => t.id !== dto.id),
+        ]);
+        setThreadMessages((prev) => ({
+          ...prev,
+          [dto.id]: dto.messages.map(toThreadMessage),
+        }));
+        return dto.id;
+      } catch {
+        return null;
+      }
     },
-    [properties],
+    [],
   );
 
   const value: LandlordDataContextValue = {

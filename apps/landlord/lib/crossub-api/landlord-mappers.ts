@@ -388,6 +388,18 @@ const MESSAGE_CATEGORY_VIEW: Record<
   [COMM_DEPARTMENT.GENERAL]: 'general',
 };
 
+/** The app's MessageCategory -> API CommDepartment (reverse of the view map, for writes). */
+export const CATEGORY_TO_DEPARTMENT: Record<
+  MessageCategory,
+  LandlordMessageThreadDto['department']
+> = {
+  general: COMM_DEPARTMENT.GENERAL,
+  maintenance: COMM_DEPARTMENT.MAINTENANCE,
+  accounting: COMM_DEPARTMENT.ACCOUNTING,
+  inspections: COMM_DEPARTMENT.INSPECTION,
+  leasing: COMM_DEPARTMENT.LEASING,
+};
+
 /** Map one conversation (facade DTO) onto the app's MessageThread list card. */
 export function toMessageThread(dto: LandlordMessageThreadDto): MessageThread {
   return {
@@ -409,11 +421,13 @@ export function mapLandlordThreads(
   return dtos.map(toMessageThread);
 }
 
-/** Map one nested message (facade DTO) onto the app's ThreadMessage. */
+/** Map one nested message (facade DTO) onto the app's ThreadMessage. The bubble UI keys
+ * its "own message" alignment off `from === 'You'`, so the landlord's own messages
+ * (fromSelf) are labelled accordingly; staff messages keep their real sender name. */
 export function toThreadMessage(
   dto: LandlordMessageThreadDto['messages'][number],
 ): ThreadMessage {
-  return { id: dto.id, from: dto.from, body: dto.body, at: dto.at };
+  return { id: dto.id, from: dto.fromSelf ? 'You' : dto.from, body: dto.body, at: dto.at };
 }
 
 /** Build the threadId -> ThreadMessage[] map the provider holds (sync screen access). */

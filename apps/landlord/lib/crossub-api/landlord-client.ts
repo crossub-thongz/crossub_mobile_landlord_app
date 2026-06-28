@@ -17,6 +17,9 @@ export type LandlordOutstandingDto =
 export type LandlordDocumentDto = components['schemas']['LandlordDocumentResponseDto'];
 export type LandlordMessageThreadDto =
   components['schemas']['LandlordMessageThreadResponseDto'];
+/** Body for opening a new message thread (`POST /api/v1/landlord/messages`). */
+export type CreateMessageThreadBody =
+  components['schemas']['CreateMessageThreadDto'];
 export type LandlordApprovalDto = components['schemas']['LandlordApprovalResponseDto'];
 export type LandlordNotificationDto =
   components['schemas']['LandlordNotificationResponseDto'];
@@ -94,6 +97,28 @@ export async function fetchDocuments(): Promise<LandlordDocumentDto[]> {
 export async function fetchMessageThreads(): Promise<LandlordMessageThreadDto[]> {
   const { data, error } = await crossub.GET('/landlord/messages');
   if (error || !data) throw new Error('Failed to load messages');
+  return data;
+}
+
+/** Open a new message thread (`POST /api/v1/landlord/messages`). */
+export async function createMessageThread(
+  body: CreateMessageThreadBody,
+): Promise<LandlordMessageThreadDto> {
+  const { data, error } = await crossub.POST('/landlord/messages', { body });
+  if (error || !data) throw new Error('Failed to create message thread');
+  return data;
+}
+
+/** Reply to an existing thread (`POST /api/v1/landlord/messages/{threadId}/reply`). */
+export async function replyToThread(
+  threadId: string,
+  body: string,
+): Promise<LandlordMessageThreadDto> {
+  const { data, error } = await crossub.POST('/landlord/messages/{threadId}/reply', {
+    params: { path: { threadId } },
+    body: { body },
+  });
+  if (error || !data) throw new Error('Failed to send reply');
   return data;
 }
 

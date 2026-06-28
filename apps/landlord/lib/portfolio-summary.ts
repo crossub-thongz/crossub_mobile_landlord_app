@@ -1,9 +1,16 @@
-import type { ApprovalItem, LandlordProperty, MaintenanceJob, PortfolioSummary } from './types';
+import type {
+  ApprovalItem,
+  LandlordProperty,
+  MaintenanceJob,
+  OutstandingAmount,
+  PortfolioSummary,
+} from './types';
 
 export function buildPortfolioSummary(
   properties: LandlordProperty[],
   approvals: ApprovalItem[],
   maintenance: MaintenanceJob[],
+  outstanding: OutstandingAmount[],
 ): PortfolioSummary {
   const occupied = properties.filter(
     (p) => p.status === 'occupied' || p.status === 'vacating' || p.status === 'periodic',
@@ -17,7 +24,7 @@ export function buildPortfolioSummary(
     vacantProperties: vacant,
     weeklyRent,
     monthlyRent: Math.round(weeklyRent * 52 / 12),
-    arrears: 650,
+    arrears: outstanding.reduce((sum, o) => sum + o.amount, 0),
     maintenanceInProgress: maintenance.filter((m) => m.status === 'in_progress').length,
     needApproval: approvals.filter((a) => a.status === 'pending').length,
   };

@@ -3,6 +3,18 @@
 ## 2026-06-28
 
 ### Added
+- Messaging is now persisted, not local-only: compose (`/messages/new`) and reply (`/messages/[id]`) call the new `POST /api/v1/landlord/messages` and `/messages/{id}/reply` endpoints via `createMessageThread` / `replyToThread` (`lib/crossub-api/landlord-client.ts`), reconciling with the server's canonical thread. `CATEGORY_TO_DEPARTMENT` maps the app's category to the API `CommDepartment` for writes; `toThreadMessage` labels the landlord's own messages (`fromSelf`) as "You" so bubble alignment survives a refresh. Both writers surface a toast on failure. Bumped `@crossub-thongz/api-contract` to `^0.7.0`.
+
+### Changed
+- `createMessageThread` / `sendMessage` are now async (return the real thread id / a success boolean) and persist to the backend instead of fabricating ephemeral local threads that vanished on refresh.
+
+### Removed
+- Mock/demo data fallback: deleted `lib/mock-data.ts` and removed all demo seeds from `LandlordDataProvider`. All ten domains now start empty and are filled only from the live facade — a failed slice stays empty (screens render their own empty states) instead of silently showing fabricated data.
+
+### Changed
+- `buildPortfolioSummary` now derives the dashboard arrears KPI from the live `outstanding` data instead of a hardcoded `650`.
+
+### Added
 - Approvals + notifications mappers + client (`lib/crossub-api/`): `toApprovalItem`, `toLandlordNotification`, `approvalDecisionToApi` (the FE-decision → API-status reverse map), and the client read fetchers + write calls (`decideApproval`, `markNotificationRead`, `markAllNotificationsRead`). `LANDLORD_APPROVAL_CATEGORY` / `_STATUS` / `_PRIORITY` and `LANDLORD_NOTIFICATION_TYPE` enum mirrors.
 - Payments, outstanding, documents, and messages mappers + client fetchers (`lib/crossub-api/`): `toPaymentRecord`, `toOutstandingAmount`, `toLandlordDocument`, `toMessageThread` / `toThreadMessage` (+ `buildThreadMessages` to fill the thread-message map from one fetch). `COMM_DEPARTMENT` enum mirror for the conversation-department → message-category mapping.
 
