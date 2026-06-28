@@ -10,6 +10,13 @@ export type LandlordInspection = components['schemas']['LandlordInspectionRespon
 export type LandlordStatement = components['schemas']['LandlordStatementResponseDto'];
 export type LandlordMonthlyStatement =
   components['schemas']['LandlordMonthlyStatementResponseDto'];
+export type LandlordPaymentDto = components['schemas']['LandlordPaymentResponseDto'];
+export type LandlordOutstandingDto =
+  components['schemas']['LandlordOutstandingResponseDto'];
+// `...Dto` so it never collides with the `LandlordDocument` view-model (lib/types.ts).
+export type LandlordDocumentDto = components['schemas']['LandlordDocumentResponseDto'];
+export type LandlordMessageThreadDto =
+  components['schemas']['LandlordMessageThreadResponseDto'];
 
 /** Owned properties (`GET /api/v1/landlord/properties`). */
 export async function fetchProperties(): Promise<LandlordPropertyDto[]> {
@@ -53,5 +60,33 @@ export async function fetchMonthlyStatements(): Promise<LandlordMonthlyStatement
   const { data, error } = await crossub.GET('/landlord/statements/monthly');
   if (error || !data) throw new Error('Failed to load monthly statements');
   // This endpoint returns a bare array (not a paginated envelope).
+  return data;
+}
+
+/** Rent payments received (`GET /api/v1/landlord/payments`). */
+export async function fetchPayments(): Promise<LandlordPaymentDto[]> {
+  const { data, error } = await crossub.GET('/landlord/payments');
+  if (error || !data) throw new Error('Failed to load payments');
+  return data;
+}
+
+/** Outstanding amounts owed (`GET /api/v1/landlord/outstanding`). */
+export async function fetchOutstanding(): Promise<LandlordOutstandingDto[]> {
+  const { data, error } = await crossub.GET('/landlord/outstanding');
+  if (error || !data) throw new Error('Failed to load outstanding amounts');
+  return data;
+}
+
+/** Documents across owned properties (`GET /api/v1/landlord/documents`). */
+export async function fetchDocuments(): Promise<LandlordDocumentDto[]> {
+  const { data, error } = await crossub.GET('/landlord/documents');
+  if (error || !data) throw new Error('Failed to load documents');
+  return data;
+}
+
+/** Message threads with nested messages (`GET /api/v1/landlord/messages`). */
+export async function fetchMessageThreads(): Promise<LandlordMessageThreadDto[]> {
+  const { data, error } = await crossub.GET('/landlord/messages');
+  if (error || !data) throw new Error('Failed to load messages');
   return data;
 }

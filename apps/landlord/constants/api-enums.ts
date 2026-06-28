@@ -59,3 +59,16 @@ export const LEASE_STATUS = {
   VACATING: 'vacating',
   VACANT: 'vacant',
 } as const;
+
+/**
+ * CommDepartment — the conversation department on `LandlordMessageThreadResponseDto`.
+ * The message mapper maps it onto the app's MessageCategory view-model.
+ */
+export const COMM_DEPARTMENT = {
+  LEASING: 'LEASING',
+  MAINTENANCE: 'MAINTENANCE',
+  INSPECTION: 'INSPECTION',
+  ACCOUNTING: 'ACCOUNTING',
+  TRIBUNAL: 'TRIBUNAL',
+  GENERAL: 'GENERAL',
+} as const;

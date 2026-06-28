@@ -11,16 +11,25 @@ import {
 
 import { useAuth } from '@/components/providers/auth-provider';
 import {
+  fetchDocuments,
   fetchInspections,
   fetchMaintenance,
+  fetchMessageThreads,
   fetchMonthlyStatements,
+  fetchOutstanding,
+  fetchPayments,
   fetchProperties,
 } from '@/lib/crossub-api/landlord-client';
 import {
+  buildThreadMessages,
+  mapLandlordDocuments,
   mapLandlordInspections,
   mapLandlordMaintenance,
+  mapLandlordOutstanding,
+  mapLandlordPayments,
   mapLandlordProperties,
   mapLandlordStatements,
+  mapLandlordThreads,
 } from '@/lib/crossub-api/landlord-mappers';
 import { api, ApiError } from '@/lib/api';
 import {
@@ -103,12 +112,12 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
   const [maintenance, setMaintenance] = useState(MAINTENANCE);
   const [properties, setProperties] = useState(PROPERTIES);
   const [statements, setStatements] = useState(STATEMENTS);
+  const [payments, setPayments] = useState(PAYMENTS);
+  const [outstanding, setOutstanding] = useState(OUTSTANDING);
+  const [documents, setDocuments] = useState(DOCUMENTS);
 
-  // Still demo-only — no faithful facade yet (payments/outstanding/documents/approvals/
-  // messages/notifications).
-  const payments = PAYMENTS;
-  const outstanding = OUTSTANDING;
-  const documents = DOCUMENTS;
+  // Still demo-only — no faithful backend source (approvals + notifications are app-only
+  // concepts; see the mobile-facade backlog).
 
   const portfolio = useMemo(
     () => buildPortfolioSummary(properties, approvals, maintenance),
@@ -135,12 +144,17 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     }
     // Load the live facade domains the screens map cleanly — each independently, so a
     // failure in one leaves just that slice on demo data (the portfolio never blanks).
-    const [maint, insp, props, stmts] = await Promise.allSettled([
-      fetchMaintenance(),
-      fetchInspections(),
-      fetchProperties(),
-      fetchMonthlyStatements(),
-    ]);
+    const [maint, insp, props, stmts, pays, owed, docs, msgs] =
+      await Promise.allSettled([
+        fetchMaintenance(),
+        fetchInspections(),
+        fetchProperties(),
+        fetchMonthlyStatements(),
+        fetchPayments(),
+        fetchOutstanding(),
+        fetchDocuments(),
+        fetchMessageThreads(),
+      ]);
     if (maint.status === 'fulfilled') {
       setMaintenance(mapLandlordMaintenance(maint.value));
       setApiConnected(true);
@@ -155,6 +169,24 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     }
     if (stmts.status === 'fulfilled') {
       setStatements(mapLandlordStatements(stmts.value));
+      setApiConnected(true);
+    }
+    if (pays.status === 'fulfilled') {
+      setPayments(mapLandlordPayments(pays.value));
+      setApiConnected(true);
+    }
+    if (owed.status === 'fulfilled') {
+      setOutstanding(mapLandlordOutstanding(owed.value));
+      setApiConnected(true);
+    }
+    if (docs.status === 'fulfilled') {
+      setDocuments(mapLandlordDocuments(docs.value));
+      setApiConnected(true);
+    }
+    if (msgs.status === 'fulfilled') {
+      // One fetch fills both the thread list and each thread's message history.
+      setMessages(mapLandlordThreads(msgs.value));
+      setThreadMessages(buildThreadMessages(msgs.value));
       setApiConnected(true);
     }
     setLoading(false);

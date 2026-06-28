@@ -16,6 +16,7 @@
  * land on safe defaults — the same shape the screens already tolerate for demo data.
  */
 import {
+  COMM_DEPARTMENT,
   INSPECTION_STATUS,
   INSPECTION_TYPE,
   LEASE_STATUS,
@@ -24,17 +25,27 @@ import {
 import type {
   InspectionRecord,
   InspectionType,
+  LandlordDocument,
   LandlordProperty,
   MaintenanceJob,
   MaintenanceStatus,
+  MessageCategory,
+  MessageThread,
   MonthlyStatement,
+  OutstandingAmount,
+  PaymentRecord,
   PropertyStatus,
+  ThreadMessage,
 } from '@/lib/types';
 
 import type {
+  LandlordDocumentDto,
   LandlordInspection as LandlordInspectionDto,
   LandlordMaintenance as LandlordMaintenanceDto,
+  LandlordMessageThreadDto,
   LandlordMonthlyStatement as LandlordMonthlyStatementDto,
+  LandlordOutstandingDto,
+  LandlordPaymentDto,
   LandlordPropertyDto,
 } from './landlord-client';
 
@@ -278,4 +289,127 @@ export function mapLandlordStatements(
   dtos: LandlordMonthlyStatementDto[],
 ): MonthlyStatement[] {
   return dtos.map(toMonthlyStatement);
+}
+
+// --------------------------------------------------------------------------
+// Payments
+// --------------------------------------------------------------------------
+
+/** Map one RENT ledger payment (facade DTO) onto the app's PaymentRecord. */
+export function toPaymentRecord(dto: LandlordPaymentDto): PaymentRecord {
+  return {
+    id: dto.id,
+    propertyId: dto.propertyId ?? '',
+    propertyAddress: dto.propertyAddress,
+    paymentDate: dto.paymentDate,
+    amount: dto.amount,
+    method: dto.method,
+  };
+}
+
+export function mapLandlordPayments(dtos: LandlordPaymentDto[]): PaymentRecord[] {
+  return dtos.map(toPaymentRecord);
+}
+
+// --------------------------------------------------------------------------
+// Outstanding
+// --------------------------------------------------------------------------
+
+/** Map one outstanding line (facade DTO) onto the app's OutstandingAmount. */
+export function toOutstandingAmount(
+  dto: LandlordOutstandingDto,
+): OutstandingAmount {
+  return {
+    id: dto.id,
+    propertyId: dto.propertyId ?? '',
+    propertyAddress: dto.propertyAddress,
+    // The facade `type` already uses the app's vocabulary ('rent'|'utility'|'maintenance').
+    type: dto.type,
+    amount: dto.amount,
+    dueDate: dto.dueDate,
+  };
+}
+
+export function mapLandlordOutstanding(
+  dtos: LandlordOutstandingDto[],
+): OutstandingAmount[] {
+  return dtos.map(toOutstandingAmount);
+}
+
+// --------------------------------------------------------------------------
+// Documents
+// --------------------------------------------------------------------------
+
+/** Map one document (facade DTO) onto the app's LandlordDocument. */
+export function toLandlordDocument(dto: LandlordDocumentDto): LandlordDocument {
+  return {
+    id: dto.id,
+    name: dto.name,
+    // The facade `category` already uses the app's DocumentCategory vocabulary.
+    category: dto.category,
+    propertyAddress: dto.propertyAddress ?? undefined,
+    uploadedAt: dto.uploadedAt,
+    version: dto.version,
+    url: dto.url,
+  };
+}
+
+export function mapLandlordDocuments(
+  dtos: LandlordDocumentDto[],
+): LandlordDocument[] {
+  return dtos.map(toLandlordDocument);
+}
+
+// --------------------------------------------------------------------------
+// Messages
+// --------------------------------------------------------------------------
+
+/** API CommDepartment -> the app's MessageCategory. */
+const MESSAGE_CATEGORY_VIEW: Record<
+  LandlordMessageThreadDto['department'],
+  MessageCategory
+> = {
+  [COMM_DEPARTMENT.LEASING]: 'leasing',
+  [COMM_DEPARTMENT.MAINTENANCE]: 'maintenance',
+  [COMM_DEPARTMENT.INSPECTION]: 'inspections',
+  [COMM_DEPARTMENT.ACCOUNTING]: 'accounting',
+  [COMM_DEPARTMENT.TRIBUNAL]: 'general',
+  [COMM_DEPARTMENT.GENERAL]: 'general',
+};
+
+/** Map one conversation (facade DTO) onto the app's MessageThread list card. */
+export function toMessageThread(dto: LandlordMessageThreadDto): MessageThread {
+  return {
+    id: dto.id,
+    propertyId: dto.propertyId ?? undefined,
+    propertyAddress: dto.propertyAddress ?? undefined,
+    subject: dto.subject,
+    category: MESSAGE_CATEGORY_VIEW[dto.department] ?? 'general',
+    participants: dto.participants,
+    lastMessage: dto.lastMessage ?? '',
+    lastAt: dto.lastAt ?? '',
+    unread: dto.unread,
+  };
+}
+
+export function mapLandlordThreads(
+  dtos: LandlordMessageThreadDto[],
+): MessageThread[] {
+  return dtos.map(toMessageThread);
+}
+
+/** Map one nested message (facade DTO) onto the app's ThreadMessage. */
+export function toThreadMessage(
+  dto: LandlordMessageThreadDto['messages'][number],
+): ThreadMessage {
+  return { id: dto.id, from: dto.from, body: dto.body, at: dto.at };
+}
+
+/** Build the threadId -> ThreadMessage[] map the provider holds (sync screen access). */
+export function buildThreadMessages(
+  dtos: LandlordMessageThreadDto[],
+): Record<string, ThreadMessage[]> {
+  return Object.fromEntries(
+    dtos.map((t) => [t.id, t.messages.map(toThreadMessage)]),
+  );
 }
