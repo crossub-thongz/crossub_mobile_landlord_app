@@ -40,7 +40,7 @@ pnpm dev
 
 Open [http://localhost:3005](http://localhost:3005).
 
-The app ships with **demo data** for all PRD modules. When the API is reachable, auth and health checks use the live backend.
+The app runs **fully against the live API** across all modules — there is no mock/demo fallback. Sign-in credentials and a screen-by-screen test script are in [`TESTING.md`](./TESTING.md).
 
 ---
 
@@ -114,8 +114,8 @@ Leave `COOKIE_DOMAIN` empty so auth cookies bind to the landlord app hostname.
 ### Step 5 — Verify
 
 1. Open `https://crossub-mobile-landlord.onrender.com/login`
-2. Sign in with a CROSSUB account from the shared API
-3. Dashboard and Approval Centre should load (demo data until landlord API endpoints exist)
+2. Sign in with a CROSSUB landlord account (see [`TESTING.md`](./TESTING.md))
+3. Dashboard and Approval Centre should load with live data from the landlord facade
 
 ---
 
@@ -159,12 +159,8 @@ crossub_mobile_landlord_app/
 └── package.json         Workspace root
 ```
 
-## API integration (future)
+## API integration
 
-The shared API does not yet have a dedicated `LANDLORD` role or scoped endpoints. Before production:
+The app is wired end-to-end to the shared API's **landlord facade** (`/api/v1/landlord/*`), a property-scoped surface anchored on the `LANDLORD` RBAC role. All ten modules — properties, approvals (+ decisions), inspections, maintenance, statements, payments, outstanding, documents, messages (+ compose/reply), and notifications (+ mark-read) — render live data. There is no mock/demo fallback.
 
-- Add `LANDLORD` RBAC role with property-scoped permissions
-- Landlord approval, statement, and inspection endpoints
-- Add landlord portal URL to API `CORS_ORIGINS` / `WEB_URL`
-
-Until then, the app uses demo data for portfolio, approvals, and financial modules while auth connects to the live API.
+Before production, ensure the landlord portal URL is added to the API's `CORS_ORIGINS` / `WEB_URL`.
