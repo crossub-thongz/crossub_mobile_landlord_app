@@ -17,6 +17,12 @@ export type LandlordOutstandingDto =
 export type LandlordDocumentDto = components['schemas']['LandlordDocumentResponseDto'];
 export type LandlordMessageThreadDto =
   components['schemas']['LandlordMessageThreadResponseDto'];
+export type LandlordApprovalDto = components['schemas']['LandlordApprovalResponseDto'];
+export type LandlordNotificationDto =
+  components['schemas']['LandlordNotificationResponseDto'];
+/** The decision statuses the approval PATCH accepts (APPROVED | DECLINED | MORE_INFO). */
+export type ApprovalDecisionStatus =
+  components['schemas']['DecideApprovalDto']['status'];
 
 /** Owned properties (`GET /api/v1/landlord/properties`). */
 export async function fetchProperties(): Promise<LandlordPropertyDto[]> {
@@ -88,5 +94,52 @@ export async function fetchDocuments(): Promise<LandlordDocumentDto[]> {
 export async function fetchMessageThreads(): Promise<LandlordMessageThreadDto[]> {
   const { data, error } = await crossub.GET('/landlord/messages');
   if (error || !data) throw new Error('Failed to load messages');
+  return data;
+}
+
+/** Approvals to decide (`GET /api/v1/landlord/approvals`). */
+export async function fetchApprovals(): Promise<LandlordApprovalDto[]> {
+  const { data, error } = await crossub.GET('/landlord/approvals');
+  if (error || !data) throw new Error('Failed to load approvals');
+  return data;
+}
+
+/** Record a decision on an approval (`PATCH /api/v1/landlord/approvals/{id}`). */
+export async function decideApproval(
+  approvalId: string,
+  status: ApprovalDecisionStatus,
+  note?: string,
+): Promise<LandlordApprovalDto> {
+  const { data, error } = await crossub.PATCH('/landlord/approvals/{approvalId}', {
+    params: { path: { approvalId } },
+    body: { status, note },
+  });
+  if (error || !data) throw new Error('Failed to decide approval');
+  return data;
+}
+
+/** Notifications (`GET /api/v1/landlord/notifications`). */
+export async function fetchNotifications(): Promise<LandlordNotificationDto[]> {
+  const { data, error } = await crossub.GET('/landlord/notifications');
+  if (error || !data) throw new Error('Failed to load notifications');
+  return data;
+}
+
+/** Mark one notification read (`PATCH /api/v1/landlord/notifications/{id}/read`). */
+export async function markNotificationRead(
+  notificationId: string,
+): Promise<LandlordNotificationDto> {
+  const { data, error } = await crossub.PATCH(
+    '/landlord/notifications/{notificationId}/read',
+    { params: { path: { notificationId } } },
+  );
+  if (error || !data) throw new Error('Failed to mark notification read');
+  return data;
+}
+
+/** Mark all notifications read (`POST /api/v1/landlord/notifications/read-all`). */
+export async function markAllNotificationsRead(): Promise<{ updated: number }> {
+  const { data, error } = await crossub.POST('/landlord/notifications/read-all');
+  if (error || !data) throw new Error('Failed to mark all notifications read');
   return data;
 }

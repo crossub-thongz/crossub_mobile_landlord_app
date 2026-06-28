@@ -11,20 +11,28 @@ import {
 
 import { useAuth } from '@/components/providers/auth-provider';
 import {
+  decideApproval as apiDecideApproval,
+  fetchApprovals,
   fetchDocuments,
   fetchInspections,
   fetchMaintenance,
   fetchMessageThreads,
   fetchMonthlyStatements,
+  fetchNotifications,
   fetchOutstanding,
   fetchPayments,
   fetchProperties,
+  markAllNotificationsRead as apiMarkAllNotificationsRead,
+  markNotificationRead as apiMarkNotificationRead,
 } from '@/lib/crossub-api/landlord-client';
 import {
+  approvalDecisionToApi,
   buildThreadMessages,
+  mapLandlordApprovals,
   mapLandlordDocuments,
   mapLandlordInspections,
   mapLandlordMaintenance,
+  mapLandlordNotifications,
   mapLandlordOutstanding,
   mapLandlordPayments,
   mapLandlordProperties,
@@ -144,7 +152,7 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     }
     // Load the live facade domains the screens map cleanly — each independently, so a
     // failure in one leaves just that slice on demo data (the portfolio never blanks).
-    const [maint, insp, props, stmts, pays, owed, docs, msgs] =
+    const [maint, insp, props, stmts, pays, owed, docs, msgs, apprs, notifs] =
       await Promise.allSettled([
         fetchMaintenance(),
         fetchInspections(),
@@ -154,6 +162,8 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
         fetchOutstanding(),
         fetchDocuments(),
         fetchMessageThreads(),
+        fetchApprovals(),
+        fetchNotifications(),
       ]);
     if (maint.status === 'fulfilled') {
       setMaintenance(mapLandlordMaintenance(maint.value));
@@ -189,6 +199,14 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
       setThreadMessages(buildThreadMessages(msgs.value));
       setApiConnected(true);
     }
+    if (apprs.status === 'fulfilled') {
+      setApprovals(mapLandlordApprovals(apprs.value));
+      setApiConnected(true);
+    }
+    if (notifs.status === 'fulfilled') {
+      setNotifications(mapLandlordNotifications(notifs.value));
+      setApiConnected(true);
+    }
     setLoading(false);
   }, [status]);
 
@@ -197,15 +215,16 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
   }, [refresh]);
 
   const resolveApproval = useCallback(
-    (id: string, newStatus: ApprovalStatus, _note?: string) => {
+    (id: string, newStatus: ApprovalStatus, note?: string) => {
+      // Optimistic local update (instant UI), then persist to the API.
       setApprovals((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
       );
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.href.includes(id) ? { ...n, read: true } : n,
-        ),
+        prev.map((n) => (n.href.includes(id) ? { ...n, read: true } : n)),
       );
+      const decision = approvalDecisionToApi(newStatus);
+      if (decision) void apiDecideApproval(id, decision, note).catch(() => {});
     },
     [],
   );
@@ -214,10 +233,12 @@ export function LandlordDataProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
+    void apiMarkNotificationRead(id).catch(() => {});
   }, []);
 
   const markAllNotificationsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    void apiMarkAllNotificationsRead().catch(() => {});
   }, []);
 
   const getThreadMessages = useCallback(

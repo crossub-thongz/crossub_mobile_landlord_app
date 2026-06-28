@@ -19,13 +19,21 @@ import {
   COMM_DEPARTMENT,
   INSPECTION_STATUS,
   INSPECTION_TYPE,
+  LANDLORD_APPROVAL_CATEGORY,
+  LANDLORD_APPROVAL_PRIORITY,
+  LANDLORD_APPROVAL_STATUS,
+  LANDLORD_NOTIFICATION_TYPE,
   LEASE_STATUS,
   MAINTENANCE_STATUS,
 } from '@/constants/api-enums';
 import type {
+  ApprovalCategory,
+  ApprovalItem,
+  ApprovalStatus,
   InspectionRecord,
   InspectionType,
   LandlordDocument,
+  LandlordNotification,
   LandlordProperty,
   MaintenanceJob,
   MaintenanceStatus,
@@ -39,11 +47,14 @@ import type {
 } from '@/lib/types';
 
 import type {
+  ApprovalDecisionStatus,
+  LandlordApprovalDto,
   LandlordDocumentDto,
   LandlordInspection as LandlordInspectionDto,
   LandlordMaintenance as LandlordMaintenanceDto,
   LandlordMessageThreadDto,
   LandlordMonthlyStatement as LandlordMonthlyStatementDto,
+  LandlordNotificationDto,
   LandlordOutstandingDto,
   LandlordPaymentDto,
   LandlordPropertyDto,
@@ -412,4 +423,109 @@ export function buildThreadMessages(
   return Object.fromEntries(
     dtos.map((t) => [t.id, t.messages.map(toThreadMessage)]),
   );
+}
+
+// --------------------------------------------------------------------------
+// Approvals
+// --------------------------------------------------------------------------
+
+/** API LandlordApprovalCategory -> the app's ApprovalCategory. */
+const APPROVAL_CATEGORY_VIEW: Record<
+  LandlordApprovalDto['category'],
+  ApprovalCategory
+> = {
+  [LANDLORD_APPROVAL_CATEGORY.MAINTENANCE]: 'maintenance',
+  [LANDLORD_APPROVAL_CATEGORY.RENT_REVIEW]: 'rent_review',
+  [LANDLORD_APPROVAL_CATEGORY.LEASE_RENEWAL]: 'lease_renewal',
+  [LANDLORD_APPROVAL_CATEGORY.SPECIAL_EXPENSE]: 'special_expense',
+  [LANDLORD_APPROVAL_CATEGORY.TRIBUNAL_LEGAL]: 'tribunal_legal',
+  [LANDLORD_APPROVAL_CATEGORY.INGOING_INSPECTION]: 'ingoing_inspection',
+};
+
+/** API LandlordApprovalStatus -> the app's ApprovalStatus. */
+const APPROVAL_STATUS_VIEW: Record<
+  LandlordApprovalDto['status'],
+  ApprovalStatus
+> = {
+  [LANDLORD_APPROVAL_STATUS.PENDING]: 'pending',
+  [LANDLORD_APPROVAL_STATUS.APPROVED]: 'approved',
+  [LANDLORD_APPROVAL_STATUS.DECLINED]: 'declined',
+  [LANDLORD_APPROVAL_STATUS.MORE_INFO]: 'more_info',
+};
+
+/** App ApprovalStatus decision -> the API decision status (null for non-decisions). */
+const APPROVAL_DECISION_API: Partial<Record<ApprovalStatus, ApprovalDecisionStatus>> = {
+  approved: LANDLORD_APPROVAL_STATUS.APPROVED,
+  declined: LANDLORD_APPROVAL_STATUS.DECLINED,
+  more_info: LANDLORD_APPROVAL_STATUS.MORE_INFO,
+};
+
+/** Map an app approval decision onto the API decision status (null if not a decision). */
+export function approvalDecisionToApi(
+  status: ApprovalStatus,
+): ApprovalDecisionStatus | null {
+  return APPROVAL_DECISION_API[status] ?? null;
+}
+
+/** Map one approval (facade DTO) onto the app's ApprovalItem. */
+export function toApprovalItem(dto: LandlordApprovalDto): ApprovalItem {
+  return {
+    id: dto.id,
+    category: APPROVAL_CATEGORY_VIEW[dto.category] ?? 'maintenance',
+    title: dto.title,
+    description: dto.description,
+    propertyId: dto.propertyId ?? '',
+    propertyAddress: dto.propertyAddress ?? '—',
+    amount: dto.amount ?? undefined,
+    requestedBy: dto.requestedBy,
+    requestedAt: dto.requestedAt,
+    status: APPROVAL_STATUS_VIEW[dto.status] ?? 'pending',
+    priority: dto.priority === LANDLORD_APPROVAL_PRIORITY.URGENT ? 'urgent' : 'normal',
+    documents: dto.documents ?? undefined,
+    recommendation: dto.recommendation ?? undefined,
+  };
+}
+
+export function mapLandlordApprovals(dtos: LandlordApprovalDto[]): ApprovalItem[] {
+  return dtos.map(toApprovalItem);
+}
+
+// --------------------------------------------------------------------------
+// Notifications
+// --------------------------------------------------------------------------
+
+/** API LandlordNotificationType -> the app's notification type. */
+const NOTIFICATION_TYPE_VIEW: Record<
+  LandlordNotificationDto['type'],
+  LandlordNotification['type']
+> = {
+  [LANDLORD_NOTIFICATION_TYPE.RENT_RECEIVED]: 'rent_received',
+  [LANDLORD_NOTIFICATION_TYPE.ARREARS]: 'arrears',
+  [LANDLORD_NOTIFICATION_TYPE.MAINTENANCE]: 'maintenance',
+  [LANDLORD_NOTIFICATION_TYPE.APPROVAL_REQUIRED]: 'approval_required',
+  [LANDLORD_NOTIFICATION_TYPE.INSPECTION]: 'inspection',
+  [LANDLORD_NOTIFICATION_TYPE.RENT_REVIEW]: 'rent_review',
+  [LANDLORD_NOTIFICATION_TYPE.LEASE_RENEWAL]: 'lease_renewal',
+  [LANDLORD_NOTIFICATION_TYPE.STATEMENT]: 'statement',
+};
+
+/** Map one notification (facade DTO) onto the app's LandlordNotification. */
+export function toLandlordNotification(
+  dto: LandlordNotificationDto,
+): LandlordNotification {
+  return {
+    id: dto.id,
+    type: NOTIFICATION_TYPE_VIEW[dto.type] ?? 'rent_received',
+    title: dto.title,
+    body: dto.body,
+    href: dto.href,
+    read: dto.read,
+    createdAt: dto.createdAt,
+  };
+}
+
+export function mapLandlordNotifications(
+  dtos: LandlordNotificationDto[],
+): LandlordNotification[] {
+  return dtos.map(toLandlordNotification);
 }

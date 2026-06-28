@@ -3,10 +3,12 @@
 ## 2026-06-28
 
 ### Added
+- Approvals + notifications mappers + client (`lib/crossub-api/`): `toApprovalItem`, `toLandlordNotification`, `approvalDecisionToApi` (the FE-decision → API-status reverse map), and the client read fetchers + write calls (`decideApproval`, `markNotificationRead`, `markAllNotificationsRead`). `LANDLORD_APPROVAL_CATEGORY` / `_STATUS` / `_PRIORITY` and `LANDLORD_NOTIFICATION_TYPE` enum mirrors.
 - Payments, outstanding, documents, and messages mappers + client fetchers (`lib/crossub-api/`): `toPaymentRecord`, `toOutstandingAmount`, `toLandlordDocument`, `toMessageThread` / `toThreadMessage` (+ `buildThreadMessages` to fill the thread-message map from one fetch). `COMM_DEPARTMENT` enum mirror for the conversation-department → message-category mapping.
 
 ### Changed
-- Payments, Outstanding, Documents, and Messages now render live API data through the `LandlordDataProvider` refresh seam (per-domain fallback to demo seeds on error), with no screen component changed. Bumped `@crossub-thongz/api-contract` to `^0.5.0`. Approvals + Notifications stay on demo data — they have no faithful backend source.
+- Approvals and Notifications now render live API data and persist their actions: `resolveApproval` / `markNotificationRead` / `markAllNotificationsRead` do an optimistic local update then fire the backend write (no screen component changed). This was the last landlord domain on mock — the app is now fully live. Bumped `@crossub-thongz/api-contract` to `^0.6.0`.
+- Payments, Outstanding, Documents, and Messages now render live API data through the `LandlordDataProvider` refresh seam (per-domain fallback to demo seeds on error), with no screen component changed. Bumped `@crossub-thongz/api-contract` to `^0.5.0`.
 
 ## 2026-06-27
 

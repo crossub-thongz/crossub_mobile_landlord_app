@@ -72,3 +72,39 @@ export const COMM_DEPARTMENT = {
   TRIBUNAL: 'TRIBUNAL',
   GENERAL: 'GENERAL',
 } as const;
+
+/** LandlordApprovalCategory — on `LandlordApprovalResponseDto`. */
+export const LANDLORD_APPROVAL_CATEGORY = {
+  MAINTENANCE: 'MAINTENANCE',
+  RENT_REVIEW: 'RENT_REVIEW',
+  LEASE_RENEWAL: 'LEASE_RENEWAL',
+  SPECIAL_EXPENSE: 'SPECIAL_EXPENSE',
+  TRIBUNAL_LEGAL: 'TRIBUNAL_LEGAL',
+  INGOING_INSPECTION: 'INGOING_INSPECTION',
+} as const;
+
+/** LandlordApprovalStatus — the approval lifecycle (PENDING is the initial state). */
+export const LANDLORD_APPROVAL_STATUS = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  DECLINED: 'DECLINED',
+  MORE_INFO: 'MORE_INFO',
+} as const;
+
+/** LandlordApprovalPriority — on `LandlordApprovalResponseDto`. */
+export const LANDLORD_APPROVAL_PRIORITY = {
+  NORMAL: 'NORMAL',
+  URGENT: 'URGENT',
+} as const;
+
+/** LandlordNotificationType — on `LandlordNotificationResponseDto`. */
+export const LANDLORD_NOTIFICATION_TYPE = {
+  RENT_RECEIVED: 'RENT_RECEIVED',
+  ARREARS: 'ARREARS',
+  MAINTENANCE: 'MAINTENANCE',
+  APPROVAL_REQUIRED: 'APPROVAL_REQUIRED',
+  INSPECTION: 'INSPECTION',
+  RENT_REVIEW: 'RENT_REVIEW',
+  LEASE_RENEWAL: 'LEASE_RENEWAL',
+  STATEMENT: 'STATEMENT',
+} as const;
