@@ -77,6 +77,17 @@ export interface MaintenanceJob {
   completionDate?: string;
   totalCost?: number;
   invoiceUrl?: string;
+  responsibility?: 'tenant' | 'landlord' | 'strata' | null;
+  buildingName?: string | null;
+  strataPlanNumber?: string | null;
+  buildingManager?: MaintenancePropertyContact;
+  strataContact?: MaintenancePropertyContact;
+}
+
+export interface MaintenancePropertyContact {
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface PaymentRecord {

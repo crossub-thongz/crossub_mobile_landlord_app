@@ -112,7 +112,28 @@ const INSPECTION_STATUS_VIEW: Record<
 };
 
 /** Map one maintenance request (thin facade DTO) onto the app's MaintenanceJob card. */
+type LandlordMaintenanceStrataFields = {
+  responsibility?: 'tenant' | 'landlord' | 'strata' | null;
+  buildingName?: unknown;
+  strataPlanNumber?: unknown;
+  buildingManager?: { name?: string; email?: string; phone?: string };
+  strataContact?: { name?: string; email?: string; phone?: string };
+};
+
+function readPropertyContact(
+  value: unknown,
+): MaintenanceJob['buildingManager'] | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const contact = value as Record<string, unknown>;
+  const name = asString(contact.name) ?? undefined;
+  const email = asString(contact.email) ?? undefined;
+  const phone = asString(contact.phone) ?? undefined;
+  if (!name && !email && !phone) return undefined;
+  return { name, email, phone };
+}
+
 export function toMaintenanceJob(dto: LandlordMaintenanceDto): MaintenanceJob {
+  const strata = dto as LandlordMaintenanceDto & LandlordMaintenanceStrataFields;
   return {
     id: dto.id,
     propertyId: asString(dto.propertyId) ?? '',
@@ -124,6 +145,11 @@ export function toMaintenanceJob(dto: LandlordMaintenanceDto): MaintenanceJob {
     priority: dto.urgent ? 'urgent' : 'normal',
     status: MAINTENANCE_STATUS_VIEW[dto.status] ?? 'awaiting_approval',
     completionDate: asString(dto.completedDate) ?? undefined,
+    responsibility: strata.responsibility ?? null,
+    buildingName: asString(strata.buildingName),
+    strataPlanNumber: asString(strata.strataPlanNumber),
+    buildingManager: readPropertyContact(strata.buildingManager),
+    strataContact: readPropertyContact(strata.strataContact),
   };
 }
 

@@ -4,6 +4,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
 
+import { LandlordMaintenanceStrataContacts } from '@/components/maintenance/landlord-maintenance-strata-contacts';
 import { StatusBadge } from '@/components/landlord/status-badge';
 import { LandlordShell } from '@/components/layout/landlord-shell';
 import { useLandlordData } from '@/components/providers/landlord-data-provider';
@@ -72,6 +73,17 @@ export default function MaintenanceDetailPage({
             </div>
           )}
         </div>
+
+        {job.responsibility === 'strata' && job.status === 'in_progress' ? (
+          <div className="rounded-xl border bg-card p-4">
+            <LandlordMaintenanceStrataContacts
+              buildingManager={job.buildingManager}
+              strataContact={job.strataContact}
+              strataPlanNumber={job.strataPlanNumber}
+              buildingName={job.buildingName}
+            />
+          </div>
+        ) : null}
 
         {job.status === 'awaiting_approval' && (
           <Link
