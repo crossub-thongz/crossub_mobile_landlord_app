@@ -93,6 +93,27 @@ export async function fetchDocuments(): Promise<LandlordDocumentDto[]> {
   return data;
 }
 
+export type UploadLandlordDocumentInput = {
+  propertyId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  contentBase64: string;
+  category: LandlordDocumentDto['category'];
+  title?: string;
+};
+
+/** Upload a document for an owned property (`POST /api/v1/landlord/documents`). */
+export async function uploadDocument(
+  input: UploadLandlordDocumentInput,
+): Promise<LandlordDocumentDto> {
+  const { data, error } = await crossub.POST('/landlord/documents', {
+    body: input as never,
+  });
+  if (error || !data) throw new Error('Failed to upload document');
+  return data as LandlordDocumentDto;
+}
+
 /** Message threads with nested messages (`GET /api/v1/landlord/messages`). */
 export async function fetchMessageThreads(): Promise<LandlordMessageThreadDto[]> {
   const { data, error } = await crossub.GET('/landlord/messages');
