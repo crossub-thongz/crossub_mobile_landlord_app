@@ -71,6 +71,10 @@ export const COMM_DEPARTMENT = {
   ACCOUNTING: 'ACCOUNTING',
   TRIBUNAL: 'TRIBUNAL',
   GENERAL: 'GENERAL',
+  // Added on the API between contract 0.7.0 and 0.14.0. A thread routed to either of these
+  // arrived here with no category at all until they were listed.
+  RENT_REVIEW: 'RENT_REVIEW',
+  COMPLAINT: 'COMPLAINT',
 } as const;
 
 /** LandlordApprovalCategory — on `LandlordApprovalResponseDto`. */

@@ -412,6 +412,11 @@ const MESSAGE_CATEGORY_VIEW: Record<
   [COMM_DEPARTMENT.ACCOUNTING]: 'accounting',
   [COMM_DEPARTMENT.TRIBUNAL]: 'general',
   [COMM_DEPARTMENT.GENERAL]: 'general',
+  // The app's `MessageCategory` is a fixed five-value union the message filters read, so
+  // these fold into the nearest existing one rather than widening it: a rent review belongs
+  // to the leasing conversation, and a complaint has no home but the catch-all.
+  [COMM_DEPARTMENT.RENT_REVIEW]: 'leasing',
+  [COMM_DEPARTMENT.COMPLAINT]: 'general',
 };
 
 /** The app's MessageCategory -> API CommDepartment (reverse of the view map, for writes). */

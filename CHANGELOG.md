@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-15
+
+### Changed
+- **The API contract moved 0.7.0 → 0.14.0 — seven versions — and the app now type-checks clean for the first time.** This repo consumes `@crossub-thongz/api-contract` from GitHub Packages, so a release published from `crossub_web` does not arrive on its own; nobody had bumped it since 0.7.0 landed on 17 July.
+
+  **The installed package was older still than the lockfile claimed.** `pnpm-lock.yaml` recorded 0.7.0, but `apps/landlord/node_modules/@crossub-thongz/api-contract` pointed at **0.1.0** — the very first release ever published. `node_modules` had drifted from the lockfile and nothing surfaces that, because `typescript.ignoreBuildErrors` is on and the build passes either way.
+
+  **The bump fixed an error rather than causing one.** `POST /landlord/documents` was rejected as *"not assignable to parameter of type `PathsWithMethod<paths, 'post'>`"* — the route exists on the API and 0.7.0 had simply never heard of it. That was the app's only type error, and it is gone.
+
+  **Two pieces of drift it revealed are fixed with it.** `LandlordDocumentDto.category` gained `application` (a tenancy application filed against the property), which `DocumentCategory` could not name — so such a document mapped to a value nothing rendered; the union and the `CATEGORY_LABELS` map both list it now. And `CommDepartment` grew `RENT_REVIEW` and `COMPLAINT`, so a thread routed to either arrived with **no category at all** — an `undefined` the message filters cannot match. Both fold into the nearest existing `MessageCategory` (`leasing` and `general`) rather than widening a five-value union the message UI filters against.
+
+  **Type errors: 1 before, 0 after.** `next build` passes.
+
+  **Known and not fixed here: 26 of the 311 schemas in this contract are empty** — `{"type":"object","properties":{}}` — because those DTOs carry `class-validator` decorators but no `@ApiProperty()`, so Swagger sees no fields. `LoginDto` is one of them. Any typed client sending those bodies gets `Type 'string' is not assignable to type 'never'`. API-side fix and a re-publish.
+
 ## 2026-08-11
 
 ### Fixed

@@ -151,6 +151,10 @@ export interface ThreadMessage {
 }
 
 export type DocumentCategory =
+  // Added on the API between contract 0.7.0 and 0.14.0 — a tenancy application filed
+  // against the property. Without it the facade returned a category this union could not
+  // name, so the document was mapped to a value nothing rendered.
+  | 'application'
   | 'management_agreement'
   | 'lease'
   | 'inspection'

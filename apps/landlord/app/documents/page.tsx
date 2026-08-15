@@ -12,6 +12,7 @@ import type { DocumentCategory } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<DocumentCategory, string> = {
+  application: 'Tenancy Application',
   management_agreement: 'Management Agreement',
   lease: 'Lease Agreement',
   inspection: 'Inspection Report',
