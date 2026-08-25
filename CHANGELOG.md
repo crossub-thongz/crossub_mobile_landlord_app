@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-26
+
+### Changed
+- **`@crossub-thongz/api-contract` ^0.16.0 → ^0.17.0, and this app still type-checks at zero errors.** The published 0.16.0 it was installing was cut on **15 Aug and is 32 contract regenerations behind** the API — far staler than the version string suggested, because the API's CI regenerates the contract and commits it back to `main` on every push while publishing is a manual `workflow_dispatch` carrying its own version. Content moves; the version does not, so "0.16.0" named several different documents at once. 0.17.0 was published to end that, and taking it here changes nothing this app compiles against.
+
 ## 2026-08-15
 
 ### Changed
