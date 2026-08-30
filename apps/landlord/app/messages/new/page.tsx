@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ROUTES, messageDetail } from '@/constants/routes';
 import type { MessageCategory } from '@/lib/types';
+import { stripEmojis } from '@/lib/strip-emojis';
 
 const CATEGORIES: { id: MessageCategory; label: string }[] = [
   { id: 'general', label: 'General Enquiry' },
@@ -110,7 +111,7 @@ export default function NewMessagePage() {
           <textarea
             id="body"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => setBody(stripEmojis(e.target.value))}
             placeholder="Write your message..."
             rows={5}
             className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm dark:bg-input/30"
