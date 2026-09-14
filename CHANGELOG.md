@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-14
+
+### Changed
+- **`@crossub-thongz/api-contract` ^0.17.0 → ^0.21.0, and this app still type-checks at the same single error.** Four releases in one step: 0.21.0 carries the maintenance AI redesign (issue questions and answers, AI quote-review flags, quote purpose, the Handyman trade) and three weeks of facade growth. The landlord facade's shapes this app reads did not change, so no call site moved; the bump keeps the registry dependency on the published document rather than a four-release-old one. `tsc --noEmit` on `apps/landlord`: 1 → 1, identical.
+
 ## 2026-08-26
 
 ### Changed
