@@ -184,7 +184,8 @@ export interface LandlordNotification {
     | 'inspection'
     | 'rent_review'
     | 'lease_renewal'
-    | 'statement';
+    | 'statement'
+    | 'message';
   title: string;
   body: string;
   href: string;

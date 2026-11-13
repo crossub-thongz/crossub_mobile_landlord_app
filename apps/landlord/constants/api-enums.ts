@@ -75,6 +75,7 @@ export const COMM_DEPARTMENT = {
   // arrived here with no category at all until they were listed.
   RENT_REVIEW: 'RENT_REVIEW',
   COMPLAINT: 'COMPLAINT',
+  SALES: 'SALES',
 } as const;
 
 /** LandlordApprovalCategory — on `LandlordApprovalResponseDto`. */
@@ -111,4 +112,5 @@ export const LANDLORD_NOTIFICATION_TYPE = {
   RENT_REVIEW: 'RENT_REVIEW',
   LEASE_RENEWAL: 'LEASE_RENEWAL',
   STATEMENT: 'STATEMENT',
+  MESSAGE: 'MESSAGE',
 } as const;

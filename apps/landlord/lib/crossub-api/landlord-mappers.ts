@@ -417,6 +417,7 @@ const MESSAGE_CATEGORY_VIEW: Record<
   // to the leasing conversation, and a complaint has no home but the catch-all.
   [COMM_DEPARTMENT.RENT_REVIEW]: 'leasing',
   [COMM_DEPARTMENT.COMPLAINT]: 'general',
+  [COMM_DEPARTMENT.SALES]: 'general',
 };
 
 /** The app's MessageCategory -> API CommDepartment (reverse of the view map, for writes). */
@@ -552,6 +553,7 @@ const NOTIFICATION_TYPE_VIEW: Record<
   [LANDLORD_NOTIFICATION_TYPE.RENT_REVIEW]: 'rent_review',
   [LANDLORD_NOTIFICATION_TYPE.LEASE_RENEWAL]: 'lease_renewal',
   [LANDLORD_NOTIFICATION_TYPE.STATEMENT]: 'statement',
+  [LANDLORD_NOTIFICATION_TYPE.MESSAGE]: 'message',
 };
 
 /** Map one notification (facade DTO) onto the app's LandlordNotification. */

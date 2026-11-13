@@ -11,8 +11,8 @@ importers:
   apps/landlord:
     dependencies:
       '@crossub-thongz/api-contract':
-        specifier: ^0.26.0
-        version: 0.26.0
+        specifier: ^0.72.0
+        version: 0.72.0
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.10.0(react-hook-form@7.78.0(react@19.2.7))
@@ -87,8 +87,8 @@ packages:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
 
-  '@crossub-thongz/api-contract@0.26.0':
-    resolution: {integrity: sha512-I4fYU3M9O2UMyFmshGpWFL8X77QgOudZpiHv1hP5dS826Iogff5n5bSKkGxENmfBvnybwl+kUNb9R+WmyENxdQ==, tarball: https://npm.pkg.github.com/download/@crossub-thongz/api-contract/0.26.0/b83672f96a178f9512a8cb4960038b4ce4fe5d43}
+  '@crossub-thongz/api-contract@0.72.0':
+    resolution: {integrity: sha512-Nk1Hb0VVRpVqD2viWHlTokz0u8O3W45usq58+YLniQbvaMJ0ih7GMR8oIqQp0m/ExJi20IRrL4qVooqNelbjzQ==, tarball: https://npm.pkg.github.com/download/@crossub-thongz/api-contract/0.72.0/7aeb325c8f23933b378473477ad7f2b4410c39a6}
 
   '@emnapi/runtime@1.11.0':
     resolution: {integrity: sha512-55coeOFKHv1ywEcUXJtWU5f+Jr/W5tZDvZig8DLKSwUN1JpROQ4rk/SNOQiFWmaR/VKF4zuFyW1B8JduOSv6Pg==}
@@ -704,7 +704,7 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@crossub-thongz/api-contract@0.26.0':
+  '@crossub-thongz/api-contract@0.72.0':
     dependencies:
       openapi-fetch: 0.13.8
 
