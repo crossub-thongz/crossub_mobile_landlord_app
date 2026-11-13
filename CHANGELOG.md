@@ -2,15 +2,23 @@
 
 ## 2026-11-13
 
-### Removed
-- `TESTING.md`: shared test password, test login emails and real landlord names; test logins are no longer kept in this repo
-
 ### Added
+- `pnpm verify` (production build with type check) and `pnpm typecheck`
+- `.github/workflows/ci.yml`: runs `pnpm verify` on every pull request
 - `.github/pull_request_template.md`: pull request checklist (real data only, no loosened checks, every behaviour change listed, AI tool use)
 - `.github/CODEOWNERS`: list of guard files (rules files, contract client, CI, lint and type settings) whose changes need senior developer review
 - `AGENTS.md`: rules file for AI coding tools, ten shared rules identical across all CROSSUB repos plus this repo's notes
 - `.cursor/rules/shared-rules.mdc`: pointer so Cursor reads `AGENTS.md`
 
+### Fixed
+- Type errors 3 to 0 (`data-allow-emoji` typed on `Input`)
+
+### Changed
+- `@crossub-thongz/api-contract` ^0.72.0 to ^0.73.0
+- Build now fails on a type error: `typescript.ignoreBuildErrors` removed from `next.config.mjs`
+
+### Removed
+- `TESTING.md`: shared test password, test login emails and real landlord names; test logins are no longer kept in this repo
 
 ## 2026-09-18
 
