@@ -2,6 +2,9 @@
 
 ## 2026-11-13
 
+### Removed
+- `TESTING.md`: shared test password, test login emails and real landlord names; test logins are no longer kept in this repo
+
 ### Added
 - `.github/pull_request_template.md`: pull request checklist (real data only, no loosened checks, every behaviour change listed, AI tool use)
 - `.github/CODEOWNERS`: list of guard files (rules files, contract client, CI, lint and type settings) whose changes need senior developer review

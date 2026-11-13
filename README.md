@@ -40,7 +40,7 @@ pnpm dev
 
 Open [http://localhost:3005](http://localhost:3005).
 
-The app runs **fully against the live API** across all modules — there is no mock/demo fallback. Sign-in credentials and a screen-by-screen test script are in [`TESTING.md`](./TESTING.md).
+The app runs **fully against the live API** across all modules — there is no mock/demo fallback. A screen-by-screen test script is in [`TESTING.md`](./TESTING.md); test logins are not kept in this repo.
 
 ---
 

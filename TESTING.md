@@ -4,16 +4,16 @@ How to sign in and what to exercise. The app runs **fully against the live backe
 
 ## Test accounts
 
-There are two kinds of login. All share the password **`ChangeMe!Now123`**.
+Logins and passwords are not kept in this repo. Ask the senior developer for a test login.
+
+There are two kinds of test login:
 
 | Account | Purpose |
 |---|---|
-| `landlord1@crossub.local` | **Demo landlord** — a synthetic but **fully-populated** portfolio. Use this to exercise *every* screen (statements, payments, approvals, messages…). |
-| `landlord.test.12804@crossub.local` | **Real landlord** — Bondi Coast PTY LTD, **30 real properties** (migrated data). |
-| `landlord.test.8179@crossub.local` | **Real landlord** — Dachuan Gao, 9 real properties. |
-| `landlord.test.14848@crossub.local` | **Real landlord** — Wu Li, 3 real properties (incl. arrears). |
+| Demo landlord | A synthetic but **fully-populated** portfolio. Use this to exercise *every* screen (statements, payments, approvals, messages…). |
+| Real-data landlords | Three test logins anchored to real migrated owner records (30, 9 and 3 properties). |
 
-Each account only ever sees its **own** properties; everything else is out of scope by design (a non-owned property returns *not found*). The **demo** account is below; the **real** accounts are in [Real-data accounts](#real-data-accounts-real-migrated-data).
+Each account only ever sees its **own** properties; everything else is out of scope by design (a non-owned property returns *not found*).
 
 ## Where to sign in
 
@@ -65,7 +65,7 @@ Deciding an approval persists — refresh and the status sticks.
 - A generated feed derived from the rent / arrears / statement / maintenance / inspection / approval activity above. **Mark-as-read** persists.
 
 ### Profile (`/profile`)
-- Larry Landlord · `landlord1@crossub.local` · +61 400 444 555.
+- Name, login email and phone of the demo landlord.
 
 ## Real-data accounts (real migrated data)
 
@@ -74,41 +74,41 @@ These logins are anchored to **real owner records** from the legacy system, so t
 test of how the app handles production-shaped data. (Owner identities are real; the email +
 password are test credentials, so no real landlord is ever contacted.)
 
-| Login (password `ChangeMe!Now123`) | Owner | Properties | What's populated |
-|---|---|---:|---|
-| `landlord.test.12804@crossub.local` | Bondi Coast PTY LTD | **30** | Properties, Inspections (91), Maintenance (75), Documents (56), Notifications |
-| `landlord.test.8179@crossub.local` | Dachuan Gao | 9 | Properties, Inspections (53), Maintenance (13), Documents (52), Notifications |
-| `landlord.test.14848@crossub.local` | Wu Li | 3 | Properties, Inspections (25), Maintenance (2), Documents (9), Notifications + an arrears case |
+| Account | Properties | What's populated |
+|---|---:|---|
+| Large portfolio | **30** | Properties, Inspections (91), Maintenance (75), Documents (56), Notifications |
+| Medium portfolio | 9 | Properties, Inspections (53), Maintenance (13), Documents (52), Notifications |
+| Small portfolio | 3 | Properties, Inspections (25), Maintenance (2), Documents (9), Notifications + an arrears case |
 
 **What is empty on the real accounts (and why):** Statements, Payments, Outstanding, Messages,
 and Approvals render empty. The legacy migration recovered the owner→property mapping and the
 inspection/maintenance/document history, but **rent ledgers, monthly settlements, leases, and
 conversations were not part of that owner data** — so those screens are legitimately empty for
-real owners. To test those fully-populated screens, use the **demo** account (`landlord1`) above.
+real owners. To test those fully-populated screens, use the **demo** account above.
 
 > Tip for testers: use the **demo** account to verify each feature works end-to-end, and the
-> **real** accounts (especially Bondi Coast's 30-property portfolio) to check list performance,
+> **real** accounts (especially the 30-property portfolio) to check list performance,
 > pagination, and real-address/photo rendering.
 
 ## Environment prerequisites (for whoever provisions the test environment)
 
-The credentials and demo data above are confirmed in the **local dev database**. For a deployed (Render/staging) environment, that database must first have:
+The demo data above is confirmed in the **local dev database**. For a deployed (Render/staging) environment, that database must first have:
 
 1. **Migrations applied** — `prisma migrate deploy` (must include `20260628000000_landlord_approvals_notifications`, which adds the approvals/notifications tables).
-2. **The seed run** — `pnpm --filter @crossub/api exec prisma db seed`, which creates `landlord1@crossub.local`, Demo Landlord House, and the full portfolio above.
+2. **The seed run** — `pnpm --filter @crossub/api exec prisma db seed`, which creates the demo landlord, Demo Landlord House, and the full portfolio above.
 
 Until both are done on the target DB, the demo login will fail or the portfolio will be empty.
 
 ### Real-data accounts on the target DB
 
-The three `landlord.test.*` logins are **additive** — no schema migration is needed (they reuse
+The three real-data logins are **additive** — no schema migration is needed (they reuse
 existing tables). To create them on the target DB, run from `crossub_web/apps/api` with
 `DATABASE_URL` pointed at that DB (the owner-mapping artifact must be present locally — it is
 produced by `pnpm migrate:owners` and is **gitignored PII**, kept off-repo):
 
 ```bash
 # 1) provision the three real landlords (idempotent; writes Person + owner-link Disbursement + LANDLORD User)
-pnpm --filter @crossub/api migrate:test-landlords --owners 12804,8179,14848
+pnpm --filter @crossub/api migrate:test-landlords --owners <owner ids>
 
 # 2) (optional) populate their Notifications screen — same generator the hourly sweep runs
 #    POST /api/landlord-notifications/generate  (staff token, MODIFY_ALL_DATA)
